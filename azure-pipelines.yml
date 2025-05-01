@@ -1,15 +1,8 @@
-# Node.js
-# Build a general Node.js project with npm.
-# Add steps that analyze code, save build artifacts, deploy, and more:
-# https://docs.microsoft.com/azure/devops/pipelines/languages/javascript
-
 trigger:
 - master
 
 pool:
-  vmImage: Default
-# variables:
-# - group: Dev-variables
+  name: default
 
 steps:
 - task: NodeTool@0
@@ -17,28 +10,21 @@ steps:
     versionSpec: '10.x'
   displayName: 'Install Node.js'
 
-- task: Npm@1
-  displayName: 'npm install'
-  inputs:
-    command: install
+- script: |
+    npm install
+    grunt --gruntfile Gruntfile.js
+  displayName: 'npm install and run grunt'
 
 - task: ArchiveFiles@2
   inputs:
-    rootFolderOrFile: '$(System.DefaultWorkingDirectory)'
-    includeRootFolder: false
-
-- task: CopyFiles@2
-  inputs:
-    Contents: '**'
-    TargetFolder: '$(build.artifactstagingdirectory)'
+    rootFolderOrFile: '$(Build.BinariesDirectory)'
+    includeRootFolder: true
+    archiveType: 'zip'
+    archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
+    replaceExistingArchive: true
+    
 - task: PublishBuildArtifacts@1
-  displayName: 'Publish Artifact'
   inputs:
-    PathtoPublish: '$(build.artifactstagingdirectory)'
-  condition: succeededOrFailed()
-# - task: AzureCLI@2
-#   inputs:
-#     azureSubscription: '95180bc6-dd06-4d97-8c68-1a912fd91352'
-#     scriptType: 'bash'
-#     scriptLocation: 'scriptPath'
-#     scriptPath: '/CLI/azlogin.sh'
+    PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+    ArtifactName: 'drop'
+    publishLocation: 'Container'
